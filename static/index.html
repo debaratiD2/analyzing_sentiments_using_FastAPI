@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mood Reader — Emotion Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500;1,9..144,600&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#14121b;
+    --bg-panel:#1d1a26;
+    --bg-panel-2:#242030;
+    --ink:#f3efe8;
+    --ink-muted:#9c97ac;
+    --ink-faint:#6b6780;
+    --line:#312c3d;
+    --neutral:#5b5770;
+    --accent:#8b6fce;
+    --radius-lg:28px;
+    --radius-md:16px;
+    --ease:cubic-bezier(.22,.9,.32,1);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+
+  body{
+    background:
+      radial-gradient(1200px 700px at 15% -10%, #221d31 0%, transparent 60%),
+      radial-gradient(1000px 600px at 110% 20%, #1c1926 0%, transparent 55%),
+      var(--bg-deep);
+    color:var(--ink);
+    font-family:'Space Grotesk', sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:48px 32px 40px;
+    width:100%;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:6px;
+  }
+  .eyebrow .dot{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--neutral);
+    transition:background .5s var(--ease);
+    box-shadow:0 0 0 0 rgba(255,255,255,0);
+  }
+  .eyebrow .dot.live{
+    animation:pulse-dot 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse-dot{
+    0%,100%{box-shadow:0 0 0 0 currentColor;}
+    50%{box-shadow:0 0 0 5px transparent;}
+  }
+
+  .stage{
+    display:grid;
+    grid-template-columns:minmax(280px, 420px) 1fr;
+    gap:56px;
+    align-items:center;
+    margin-top:28px;
+  }
+
+  /* ---------- ORB ---------- */
+  .orb-wrap{
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    aspect-ratio:1/1;
+    width:100%;
+  }
+  #orbSvg{
+    width:100%;
+    height:100%;
+    overflow:visible;
+  }
+  .orb-emoji{
+    position:absolute;
+    font-size:56px;
+    line-height:1;
+    transform:translateY(0) scale(1);
+    opacity:0.95;
+    filter:drop-shadow(0 6px 18px rgba(0,0,0,.35));
+    transition:transform .5s var(--ease), opacity .4s ease;
+    user-select:none;
+  }
+  .orb-emoji.swap{
+    transform:translateY(10px) scale(.6);
+    opacity:0;
+  }
+
+  /* ---------- PANEL ---------- */
+  .panel{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+
+  h1{
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-weight:500;
+    font-size:clamp(30px, 4vw, 44px);
+    line-height:1.08;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  h1 em{
+    font-style:italic;
+    color:var(--result-color, var(--accent));
+    transition:color .6s var(--ease);
+  }
+
+  .sub{
+    color:var(--ink-muted);
+    font-size:15px;
+    line-height:1.55;
+    margin:0;
+    max-width:46ch;
+  }
+
+  .input-shell{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius-lg);
+    padding:6px;
+    transition:border-color .3s ease, box-shadow .3s ease;
+  }
+  .input-shell:focus-within{
+    border-color:var(--result-color, var(--accent));
+    box-shadow:0 0 0 4px color-mix(in srgb, var(--result-color, var(--accent)) 18%, transparent);
+  }
+
+  textarea{
+    width:100%;
+    resize:none;
+    background:transparent;
+    border:none;
+    outline:none;
+    color:var(--ink);
+    font-family:'Space Grotesk', sans-serif;
+    font-size:16px;
+    line-height:1.5;
+    padding:16px 18px 4px;
+    min-height:88px;
+    font-weight:400;
+  }
+  textarea::placeholder{ color:var(--ink-faint); }
+
+  .input-footer{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:6px 12px 10px 18px;
+  }
+
+  .count{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-faint);
+  }
+  .count.warn{ color:#e4483b; }
+
+  button#analyzeBtn{
+    appearance:none;
+    border:none;
+    cursor:pointer;
+    background:var(--result-color, var(--accent));
+    color:#14121b;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:14.5px;
+    padding:11px 20px;
+    border-radius:999px;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    transition:transform .15s var(--ease), background .5s var(--ease), opacity .3s ease;
+  }
+  button#analyzeBtn:hover:not(:disabled){ transform:translateY(-1px); }
+  button#analyzeBtn:active:not(:disabled){ transform:translateY(0px) scale(.98); }
+  button#analyzeBtn:disabled{ opacity:.6; cursor:default; }
+  button#analyzeBtn:focus-visible{ outline:2px solid var(--ink); outline-offset:3px; }
+
+  .btn-dots span{
+    display:inline-block;
+    width:4px;height:4px;border-radius:50%;
+    background:#14121b;
+    margin-left:2px;
+    animation:dots 1s infinite ease-in-out;
+  }
+  .btn-dots span:nth-child(2){ animation-delay:.15s; }
+  .btn-dots span:nth-child(3){ animation-delay:.3s; }
+  @keyframes dots{
+    0%,80%,100%{ opacity:.25; transform:translateY(0);}
+    40%{ opacity:1; transform:translateY(-2px);}
+  }
+  .btn-dots{ display:none; }
+  button#analyzeBtn.loading .btn-dots{ display:inline-flex; }
+  button#analyzeBtn.loading .btn-label{ opacity:.85; }
+
+  .status{
+    min-height:18px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    color:#e4483b;
+    transition:opacity .3s ease;
+  }
+
+  /* ---------- BARS ---------- */
+  .bars{
+    display:flex;
+    flex-direction:column;
+    gap:9px;
+    margin-top:6px;
+  }
+  .bar-row{
+    display:grid;
+    grid-template-columns:120px 1fr 52px;
+    align-items:center;
+    gap:12px;
+    padding:5px 8px;
+    border-radius:10px;
+    border-left:2px solid transparent;
+    transition:border-color .5s ease, background .5s ease;
+  }
+  .bar-row.leading{
+    border-left:2px solid var(--row-color, var(--accent));
+    background:color-mix(in srgb, var(--row-color, var(--accent)) 8%, transparent);
+  }
+  .bar-label{
+    font-size:13.5px;
+    color:var(--ink-muted);
+    display:flex;
+    align-items:center;
+    gap:7px;
+    white-space:nowrap;
+  }
+  .bar-row.leading .bar-label{ color:var(--ink); font-weight:500; }
+  .bar-track{
+    height:6px;
+    background:var(--bg-panel-2);
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .bar-fill{
+    height:100%;
+    width:0%;
+    border-radius:4px;
+    background:var(--row-color, var(--neutral));
+    transition:width .85s var(--ease), background .5s ease;
+  }
+  .bar-pct{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-faint);
+    text-align:right;
+  }
+  .bar-row.leading .bar-pct{ color:var(--ink); }
+
+  footer{
+    max-width:1180px;
+    margin:0 auto;
+    width:100%;
+    padding:0 32px 28px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-faint);
+    letter-spacing:.02em;
+  }
+
+  @media (max-width: 860px){
+    .stage{ grid-template-columns:1fr; gap:28px; }
+    .orb-wrap{ max-width:220px; margin:0 auto; }
+    .bar-row{ grid-template-columns:96px 1fr 44px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .eyebrow .dot.live{ animation:none; }
+    .btn-dots span{ animation:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="eyebrow"><span class="dot" id="statusDot"></span> 6-emotion classifier</div>
+
+  <div class="stage">
+    <div class="orb-wrap">
+      <svg id="orbSvg" viewBox="0 0 300 300">
+        <defs>
+          <radialGradient id="orbGrad" cx="35%" cy="30%" r="75%">
+            <stop id="gradStopA" offset="0%" stop-color="#8b6fce"/>
+            <stop id="gradStopB" offset="100%" stop-color="#5b5770"/>
+          </radialGradient>
+          <filter id="orbGlow" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <path id="orbPath" fill="url(#orbGrad)" filter="url(#orbGlow)" />
+      </svg>
+      <div class="orb-emoji" id="orbEmoji">🙂</div>
+    </div>
+
+    <div class="panel">
+      <h1>is this a feeling of <em id="emResult">sound</em>?</h1>
+      <p class="sub">Type a sentence. The model reads it, and the shape on the left settles into whatever it finds — six emotions, one blob.</p>
+
+      <div class="input-shell">
+        <textarea id="textInput" maxlength="500" rows="3" placeholder="I finally finished the project after weeks of work..."></textarea>
+        <div class="input-footer">
+          <span class="count" id="charCount">0 / 500</span>
+          <button id="analyzeBtn">
+            <span class="btn-label">Read the feeling</span>
+            <span class="btn-dots"><span></span><span></span><span></span></span>
+          </button>
+        </div>
+      </div>
+      <div class="status" id="statusLine"></div>
+
+      <div class="bars" id="bars"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>emotion inference · text in, feeling out</span>
+  <span id="latency">—</span>
+</footer>
+
+<script>
+(function(){
+  const N = 10; // points around the blob
+  const TAU = Math.PI * 2;
+
+  const EMOTIONS = {
+    neutral: { label:'—', emoji:'🙂', color:'#5b5770', color2:'#332f43', glow:8,  baseR:76, amp1:5,  freq1:2, amp2:0,  freq2:0 },
+    sadness: { label:'Sadness', emoji:'😢', color:'#5d82c9', color2:'#2c3550', glow:8,  baseR:66, amp1:5,  freq1:1, amp2:2, freq2:3 },
+    joy:     { label:'Joy',     emoji:'😄', color:'#f4b740', color2:'#5a4318', glow:20, baseR:92, amp1:15, freq1:3, amp2:5,  freq2:7 },
+    love:    { label:'Love',    emoji:'❤️', color:'#e85d8a', color2:'#4a2333', glow:16, baseR:85, amp1:11, freq1:2, amp2:7,  freq2:4 },
+    anger:   { label:'Anger',   emoji:'😠', color:'#e4483b', color2:'#4a1c16', glow:22, baseR:94, amp1:21, freq1:5, amp2:9,  freq2:9 },
+    fear:    { label:'Fear',    emoji:'😨', color:'#8b6fce', color2:'#332a4a', glow:10, baseR:58, amp1:8,  freq1:6, amp2:5,  freq2:11 },
+    surprise:{ label:'Surprise',emoji:'😲', color:'#3fc9b5', color2:'#173f39', glow:18, baseR:100,amp1:7,  freq1:8, amp2:0,  freq2:0 },
+  };
+
+  function radiiFor(p){
+    const arr = [];
+    for(let i=0;i<N;i++){
+      const a = (i/N)*TAU;
+      const r = p.baseR
+        + p.amp1*Math.sin(p.freq1*a)
+        + p.amp2*Math.sin(p.freq2*a + 1.3);
+      arr.push(r);
+    }
+    return arr;
+  }
+  Object.values(EMOTIONS).forEach(p => p.radii = radiiFor(p));
+
+  function hexToRgb(hex){
+    const v = parseInt(hex.slice(1),16);
+    return { r:(v>>16)&255, g:(v>>8)&255, b:v&255 };
+  }
+  function rgbToHex(r,g,b){
+    return '#' + [r,g,b].map(x=>Math.round(Math.max(0,Math.min(255,x))).toString(16).padStart(2,'0')).join('');
+  }
+  function lerp(a,b,t){ return a + (b-a)*t; }
+  function lerpColor(hexA, hexB, t){
+    const a = hexToRgb(hexA), b = hexToRgb(hexB);
+    return rgbToHex(lerp(a.r,b.r,t), lerp(a.g,b.g,t), lerp(a.b,b.b,t));
+  }
+  function easeInOutCubic(t){ return t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
+
+  function pointsFromRadii(radii, cx, cy){
+    const pts = [];
+    for(let i=0;i<N;i++){
+      const a = (i/N)*TAU - Math.PI/2;
+      pts.push({ x: cx + radii[i]*Math.cos(a), y: cy + radii[i]*Math.sin(a) });
+    }
+    return pts;
+  }
+  function midpoint(p1,p2){ return { x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2 }; }
+  function blobPath(points){
+    const n = points.length;
+    const start = midpoint(points[n-1], points[0]);
+    let d = `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} `;
+    for(let i=0;i<n;i++){
+      const p1 = points[i], p2 = points[(i+1)%n];
+      const m = midpoint(p1,p2);
+      d += `Q ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} ${m.x.toFixed(2)} ${m.y.toFixed(2)} `;
+    }
+    return d + 'Z';
+  }
+
+  const orbPath = document.getElementById('orbPath');
+  const gradA = document.getElementById('gradStopA');
+  const gradB = document.getElementById('gradStopB');
+  const glowFilter = document.querySelector('#orbGlow feGaussianBlur');
+  const orbEmoji = document.getElementById('orbEmoji');
+  const statusDot = document.getElementById('statusDot');
+  const emResult = document.getElementById('emResult');
+
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let currentRadii = EMOTIONS.neutral.radii.slice();
+  let currentColor = EMOTIONS.neutral.color;
+  let currentColor2 = EMOTIONS.neutral.color2;
+  let currentGlow = EMOTIONS.neutral.glow;
+
+  let morph = null; // {fromRadii, toRadii, fromColor, toColor, fromColor2, toColor2, fromGlow, toGlow, start, dur}
+  let idleAmp = 2.2;
+  let idleSpeed = 1;
+  let boosted = false;
+
+  function setCSSAccent(hex){
+    document.documentElement.style.setProperty('--result-color', hex);
+  }
+
+  function triggerMorph(targetKey){
+    const t = EMOTIONS[targetKey];
+    morph = {
+      fromRadii: currentRadii.slice(),
+      toRadii: t.radii,
+      fromColor: currentColor, toColor: t.color,
+      fromColor2: currentColor2, toColor2: t.color2,
+      fromGlow: currentGlow, toGlow: t.glow,
+      start: performance.now(),
+      dur: prefersReduced ? 1 : 700
+    };
+  }
+
+  function render(now){
+    const time = now / 1000;
+    let radii = currentRadii;
+    let color = currentColor, color2 = currentColor2, glow = currentGlow;
+
+    if(morph){
+      const p = Math.min(1, (now - morph.start) / morph.dur);
+      const e = easeInOutCubic(p);
+      radii = morph.fromRadii.map((r,i) => lerp(r, morph.toRadii[i], e));
+      color = lerpColor(morph.fromColor, morph.toColor, e);
+      color2 = lerpColor(morph.fromColor2, morph.toColor2, e);
+      glow = lerp(morph.fromGlow, morph.toGlow, e);
+      currentRadii = radii; currentColor = color; currentColor2 = color2; currentGlow = glow;
+      if(p >= 1) morph = null;
+    }
+
+    // idle breathing overlay (skip largely if reduced motion)
+    const amp = prefersReduced ? 0 : (boosted ? idleAmp*2.2 : idleAmp);
+    const speed = boosted ? idleSpeed*2.6 : idleSpeed;
+    const breathed = radii.map((r,i) => r + Math.sin(time*speed + i*0.9) * amp);
+
+    const pts = pointsFromRadii(breathed, 150, 150);
+    orbPath.setAttribute('d', blobPath(pts));
+    gradA.setAttribute('stop-color', color);
+    gradB.setAttribute('stop-color', color2);
+    glowFilter.setAttribute('stdDeviation', glow/2.2);
+
+    requestAnimationFrame(render);
+  }
+  requestAnimationFrame(render);
+
+  function showEmotion(key){
+    const t = EMOTIONS[key];
+    triggerMorph(key);
+    setCSSAccent(t.color);
+    statusDot.style.color = t.color;
+    statusDot.style.background = t.color;
+    statusDot.classList.add('live');
+    emResult.textContent = key === 'neutral' ? 'sound' : t.label.toLowerCase();
+
+    orbEmoji.classList.add('swap');
+    setTimeout(() => {
+      orbEmoji.textContent = t.emoji;
+      orbEmoji.classList.remove('swap');
+    }, prefersReduced ? 0 : 260);
+  }
+
+  // ---------- bars ----------
+  const barsEl = document.getElementById('bars');
+  const order = ['joy','sadness','love','anger','fear','surprise'];
+  order.forEach(key => {
+    const t = EMOTIONS[key];
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.id = 'row-' + key;
+    row.innerHTML = `
+      <div class="bar-label"><span>${t.emoji}</span><span>${t.label}</span></div>
+      <div class="bar-track"><div class="bar-fill" id="fill-${key}"></div></div>
+      <div class="bar-pct" id="pct-${key}">0%</div>
+    `;
+    barsEl.appendChild(row);
+  });
+
+  function animateNumber(el, from, to, dur){
+    const start = performance.now();
+    function step(now){
+      const p = Math.min(1, (now-start)/dur);
+      const e = easeInOutCubic(p);
+      const val = lerp(from, to, e);
+      el.textContent = Math.round(val*100) + '%';
+      if(p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function updateBars(probs, predicted){
+    order.forEach(key => {
+      const val = probs[key] ?? 0;
+      const fill = document.getElementById('fill-' + key);
+      const pct = document.getElementById('pct-' + key);
+      const row = document.getElementById('row-' + key);
+      const color = EMOTIONS[key].color;
+      row.style.setProperty('--row-color', color);
+      fill.style.background = color;
+      fill.style.width = (val*100) + '%';
+      const prevText = pct.textContent.replace('%','');
+      const prevVal = parseFloat(prevText)/100 || 0;
+      animateNumber(pct, prevVal, val, 850);
+      row.classList.toggle('leading', key === predicted);
+    });
+  }
+
+  // ---------- form wiring ----------
+  const textInput = document.getElementById('textInput');
+  const charCount = document.getElementById('charCount');
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  const statusLine = document.getElementById('statusLine');
+  const latencyEl = document.getElementById('latency');
+
+  textInput.addEventListener('input', () => {
+    const len = textInput.value.length;
+    charCount.textContent = `${len} / 500`;
+    charCount.classList.toggle('warn', len >= 480);
+  });
+
+  textInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault();
+      analyze();
+    }
+  });
+
+  analyzeBtn.addEventListener('click', analyze);
+
+  let inFlight = false;
+
+  async function analyze(){
+    const text = textInput.value.trim();
+    statusLine.textContent = '';
+    if(!text){
+      statusLine.textContent = 'Type something first.';
+      return;
+    }
+    if(inFlight) return;
+    inFlight = true;
+    boosted = true;
+    analyzeBtn.classList.add('loading');
+    analyzeBtn.disabled = true;
+    const t0 = performance.now();
+
+    try{
+      const res = await fetch('/predict', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ text })
+      });
+
+      if(!res.ok){
+        let detail = 'Something went wrong on the server.';
+        try{
+          const err = await res.json();
+          detail = err.detail || detail;
+        }catch(_e){}
+        throw new Error(detail);
+      }
+
+      const data = await res.json();
+      const ms = Math.round(performance.now() - t0);
+      latencyEl.textContent = `${ms}ms`;
+
+      showEmotion(data.predicted_emotion);
+      updateBars(data.all_probabilities, data.predicted_emotion);
+
+    }catch(err){
+      statusLine.textContent = err.message || 'Couldn\'t reach the model — try again.';
+      statusDot.classList.remove('live');
+    }finally{
+      inFlight = false;
+      boosted = false;
+      analyzeBtn.classList.remove('loading');
+      analyzeBtn.disabled = false;
+    }
+  }
+})();
+</script>
+</body>
+</html>
