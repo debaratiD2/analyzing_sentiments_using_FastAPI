@@ -157,6 +157,10 @@ api endpoints
 def server_ui():
     return FileResponse('static/index.html')
 
+@app.get('/favicon.ico', include_in_schema=False)
+def favicon():
+    return FileResponse('static/favicon.ico')
+
 @app.get('/health', response_model = HealthResponse)
 def health_check():
     return HealthResponse(status = "Server is running", model_loaded = bool(dl_model))
