@@ -9,7 +9,7 @@ FastAPI application.**
 
 **Dataset:** [dair-ai/emotion on Hugging Face](https://huggingface.co/datasets/dair-ai/emotion)
 
-**GitHub:** [https://github.com/debaratiD2/analyzing_sentiments_using_FastAPI ](https://github.com/debaratiD2/emotion-classification-BiGRU-FastAPI/blob/main/README.md) 
+**GitHub:** [https://github.com/debaratiD2/analyzing_sentiments_using_FastAPI ](https://github.com/debaratiD2/emotion-classification-BiGRU-FastAPI/) 
 
 **Tutorial that inspired this project:** [Emotion classification / FastAPI tutorial](https://youtu.be/mXW4NzapGhQ?si=0JNV4-fNKQ6QAa5f)
 
