@@ -1,6 +1,27 @@
 # Emotion Classification with BiGRU + FastAPI
 
-> **A small NLP project that began with a tutorial, turned into an experiment, and eventually became my first real experience of taking a trained deep-learning model all the way to an API.**
+> **An end-to-end NLP project that classifies text into six emotions using
+a Bidirectional GRU model and exposes the trained model through a
+FastAPI application.**
+
+**Live App:** [https://analyzing-sentiments-using-fastapi-1.onrender.com/
+](https://analyzing-sentiments-using-fastapi-1.onrender.com)
+
+**Dataset:** [dair-ai/emotion on Hugging Face](https://huggingface.co/datasets/dair-ai/emotion)
+
+**GitHub:** [https://github.com/debaratiD2/analyzing_sentiments_using_FastAPI ](https://github.com/debaratiD2/emotion-classification-BiGRU-FastAPI/) 
+
+**Tutorial that inspired this project:** [Emotion classification / FastAPI tutorial](https://youtu.be/mXW4NzapGhQ?si=0JNV4-fNKQ6QAa5f)
+
+### Example
+
+**Input**
+
+> I am extremely happy today!
+
+**Prediction**
+
+> Joy
 
 ## 📰 The Project Journal
 
@@ -15,17 +36,6 @@ The part I enjoyed most was seeing individual concepts connect into one complete
 I have experimented with many datasets and trained and evaluated different models before, but this time, I went one step further. After finishing the training and evaluation, I deployed the model to **Render** and got a live URL that could actually serve predictions. That experience made me understand that building a machine-learning project does not end when the model achieves a satisfactory score. Hosting the model for production brings its own set of challenges—saving and loading the model correctly, handling dependencies, connecting the prediction logic to an API, and making sure the deployed application responds reliably to real requests. For the first time, I truly understood the practical hassle of taking a trained model from a notebook and turning it into something that can actually be hosted and used.
 
 That transition is what this README is really about. It is not just documentation of the final files. It is a journal of what I learned, what confused me, what broke, and what finally worked.
-
-### Resources
-
-- **Dataset:** [dair-ai/emotion on Hugging Face](https://huggingface.co/datasets/dair-ai/emotion)
-- **YouTube tutorial:** [Emotion classification / FastAPI tutorial](https://youtu.be/mXW4NzapGhQ?si=0JNV4-fNKQ6QAa5f)
-
-## 🔗 Project Links
-
-**GitHub:** https://github.com/debaratiD2/analyzing_sentiments_using_FastAPI  
-**Live App:** https://analyzing-sentiments-using-fastapi-1.onrender.com/
-
 
 ---
 
@@ -70,7 +80,9 @@ The early experiments were humbling. The first RNN/LSTM/GRU results were nowhere
 
 That was useful rather than discouraging. It made me realize that trying a model is not the same thing as understanding a model.
 
-The **GRU** became especially interesting to me because it could model sequence information while being relatively simpler than an LSTM. Then I took the next step: **Bidirectional GRU**.
+**Why BiGRU?** 
+
+The **GRU** became especially interesting to me because it could model sequence information while being relatively simpler than an LSTM. Then I took the next step and experimented with a **Bidirectional GRU (BiGRU)**. Unlike a standard GRU, which processes a sentence sequentially from left to right, a BiGRU processes the sequence in **both directions**—from left to right and from right to left. By capturing information from both directions, the BiGRU was able to understand the context more effectively, which ultimately helped improve the model's performance and gave me a more satisfactory accuracy.
 
 ---
 
@@ -104,9 +116,7 @@ It was not a perfect model, but for me it was a very satisfactory result because
 
 ## 🧠 What I Actually Learned From the Model
 
-This project changed the way I think about NLP models.
-
-Before this project, terms such as *tokenization*, *padding*, *class weights*, *GRU*, and *bidirectional networks* were mostly things I had read about. After implementing them, they became parts of a complete pipeline.
+Before this project, terms such as *tokenization*, *padding*, *class weights*, *GRU*, and *bidirectional networks* were mostly things I had read about. After implementing them, they became parts of a **complete pipeline**.
 
 The flow became much clearer:
 
@@ -134,7 +144,7 @@ That pipeline is probably the single biggest conceptual takeaway I gained from t
 
 ---
 
-## 🚧 The Part That Challenged Me Most: FastAPI
+## The Part That Challenged Me Most: FastAPI
 
 Training the model was challenging, but **turning the trained model into something that could actually answer an HTTP request was a completely different kind of challenge**.
 
@@ -216,7 +226,7 @@ The `/health` endpoint was particularly useful because it gave me a simple way t
 
 ---
 
-## 🌐 From Localhost to Deployment
+## From Localhost to Deployment 🌐
 
 Getting the API working locally was only half the story.
 
@@ -234,7 +244,7 @@ Deployment adds operating-system, dependency, startup, file-path, memory, and se
 
 ---
 
-## 📊 Results
+## Results 📊
 
 The final BiGRU evaluation in the notebook produced:
 
@@ -254,17 +264,62 @@ The reported BiGRU result is from the existing notebook evaluation, so it should
 
 ---
 
-## ⚠️ A Limitation I Want to Be Honest About
+## Caveats & Limitations
 
-The biggest limitation of this project is the dataset.
+- **Existing Dataset:**  
+  The biggest limitation of this project is the dataset. I used an existing
+  [Hugging Face Emotion dataset](https://huggingface.co/datasets/dair-ai/emotion)
+  rather than collecting a new, domain-specific dataset. This made the project
+  excellent for learning the complete NLP workflow, but it also means I should
+  be careful about claiming that the model is broadly generalized.
 
-I used an **existing Hugging Face dataset** rather than collecting a new, domain-specific dataset. That made the project excellent for learning the end-to-end NLP workflow, but it also means I should be careful about calling the model broadly generalized.
+- **Benchmark Performance vs. Real-World Generalization:**  
+  A model can achieve a strong test score on a familiar benchmark and still
+  struggle with text that differs substantially from its training data. For
+  example, real-world text may contain slang, sarcasm, domain-specific
+  language, unusual phrasing, or completely different patterns.
 
-A model can achieve a strong test score on a familiar benchmark and still struggle with text that differs substantially from the data it was trained on — for example, slang, sarcasm, domain-specific language, unusual phrasing, or other distributions of real-world text.
+- **Interpreting the 92.95% Accuracy:**  
+  I therefore consider the **92.95% test accuracy** to be satisfactory
+  benchmark performance for this learning project, rather than proof of
+  universal emotion understanding. One of the important lessons I learned
+  from this project was that a good evaluation metric does not automatically
+  mean that a model will be reliable in every real-world situation.
 
-So I would describe the 92.95% result as **satisfactory benchmark performance for this learning project**, not as proof of universal emotion understanding.
+- **TensorFlow/Keras Version Compatibility:**  
+  Another important challenge appeared when I tried to move the trained model
+  from the training environment to the FastAPI application. The complete
+  `.keras` model could not always be loaded successfully because of
+  **TensorFlow/Keras version differences** between the environment where the
+  model was trained and the environment where it was being deployed.
 
-That distinction is important to me because one of the lessons of this project was learning not to confuse a good metric with a universally reliable system.
+- **Saving Weights Instead of the Complete Model:**  
+  To avoid depending on the exact model configuration serialized inside the
+  `.keras` file, I saved the model's weights separately and rebuilt the
+  BiGRU architecture in `main.py` before loading those weights. This is why
+  the FastAPI application contains the `build_bigru_model()` function and
+  loads the weights during the application's lifespan:
+
+  ```python
+  def build_bigru_model():
+      model = Sequential([
+          Embedding(input_dim=10000, output_dim=300),
+          Bidirectional(GRU(units=128, return_sequences=True)),
+          Dropout(0.5),
+          Bidirectional(GRU(units=64)),
+          Dropout(0.5),
+          Dense(6, activation='softmax')
+      ])
+
+      model.build(input_shape=(None, 50))
+      return model
+  ```
+-**Deployment Compatibility:**
+Because TensorFlow and Keras are sensitive to version compatibility,
+the deployed POST /predict endpoint may not always work if the model
+weights, architecture, tokenizer, and serving environment are not kept
+consistent.
+  
 
 ---
 
@@ -286,8 +341,6 @@ analyzing_sentiments_using_FastAPI/
 ├── runtime.txt
 └── README.md
 ```
-
-The notebook contains the experimentation and model-training journey, while `main.py` contains the FastAPI application and inference pipeline. The saved artifacts allow the API to reconstruct the model and load the learned weights without retraining it.
 
 ---
 
@@ -327,7 +380,7 @@ uvicorn main:app --reload
 
 Then open the local application in your browser and test the `/health` and `/predict` endpoints.
 
-FastAPI also provides interactive API documentation, which was another useful part of the learning process because it made it easy for me to send requests and inspect responses.
+FastAPI also provides interactive API documentation with `/docs` at the end of your localhost link, which was another useful part to send requests and inspect responses.
 
 ---
 
@@ -357,11 +410,11 @@ Example response shape:
 }
 ```
 
-> The probability values above are illustrative; actual values depend on the model prediction.
-
 ---
 
 # Final Note
+The notebook contains the experimentation and model-training journey, while `main.py` contains the FastAPI application and inference pipeline. The saved artifacts allow the API to reconstruct the model and load the learned weights without retraining it.
+
 The tutorial helped me with the implementation and debugging process to turn those ideas into something I could explain and maintain myself. Special thanks to **Sheryians AI School** for explaning the overall direction.
 
 ---
