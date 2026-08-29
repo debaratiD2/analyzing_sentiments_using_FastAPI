@@ -1,4 +1,4 @@
-# Analyzing Sentiments Using BiGRU + FastAPI
+# Emotion Classification with BiGRU + FastAPI
 
 > **A small NLP project that began with a tutorial, turned into an experiment, and eventually became my first real experience of taking a trained deep-learning model all the way to an API.**
 
